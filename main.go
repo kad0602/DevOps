@@ -1,14 +1,17 @@
 package main
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
+	// Створюємо базовий роутер Gin
 	r := gin.Default()
 
+	// Налаштовуємо простий ендпоінт
 	r.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"status":  "success",
@@ -16,5 +19,8 @@ func main() {
 		})
 	})
 
-	r.Run(":8080")
+	// Запускаємо сервер ТА перевіряємо наявність помилок
+	if err := r.Run(":8080"); err != nil {
+		log.Fatalf("Помилка при запуску сервера: %v", err)
+	}
 }
