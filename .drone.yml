@@ -37,27 +37,27 @@ steps:
       GCP_CREDENTIALS:
         from_secret: gcp_credentials
     commands:
-      # 1. Встановлюємо утиліти для роботи з API (curl та jq)
+      # 1. Встановлюємо утиліти
       - apk add --no-cache jq curl
       
-      # 2. Зберігаємо  секретний файл
+      # 2. Зберігаємо твій секретний файл
       - echo $GCP_CREDENTIALS > /tmp/gcp-key.json
       
-      # 3. Парсимо дані з JSON
+      # 3. Парсимо дані
       - CLIENT_ID=$(jq -r .client_id /tmp/gcp-key.json)
       - CLIENT_SECRET=$(jq -r .client_secret /tmp/gcp-key.json)
       - REFRESH_TOKEN=$(jq -r .refresh_token /tmp/gcp-key.json)
       
-      # 4. Обмінюємо Refresh Token на свіжий Access Token
+      # 4. Отримуємо токен
       - ACCESS_TOKEN=$(curl -s -X POST https://oauth2.googleapis.com/token -d "client_id=$CLIENT_ID&client_secret=$CLIENT_SECRET&refresh_token=$REFRESH_TOKEN&grant_type=refresh_token" | jq -r .access_token)
       
-      # 5. Інжектимо токен прямо в конфіг gcloud
-      - gcloud config set auth/access_token $ACCESS_TOKEN
+      # 5. Інжектуємо токен у середовище
+      - export CLOUDSDK_AUTH_ACCESS_TOKEN=$ACCESS_TOKEN
       
-      # 6. Вказуємо  проєкт
+      # 6. Вказуємо твій проєкт
       - gcloud config set project exalted-density-496814-q5
       
-      # 7. Деплой 
+      # 7. Деплой
       - gcloud run deploy go-gin-api \
           --image docker.io/kad0602/go-gin-api:${DRONE_COMMIT_SHA:0:7} \
           --region europe-central2 \
