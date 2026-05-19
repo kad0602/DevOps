@@ -1,0 +1,47 @@
+kind: pipeline
+type: docker
+name: ci-cd-pipeline
+
+# Етапи виконання пайплайну
+steps:
+  - name: lint
+      # Використовуємо офіційний готовий образ лінтера
+    image: golangci/golangci-lint:latest
+    commands:
+      # Запускаємо перевірку коду. Якщо є помилки форматування — пайплайн впаде
+      - golangci-lint run
+
+  - name: test
+    # Використовуємо твій образ Go для тестіві
+    image: golang:1.26
+    commands:
+      # Запускаємо Unit-тести. Якщо тести не пройдуть — пайплайн впаде
+      - go test -v ./...
+
+  - name: docker-build-and-push
+    # Drone CI має спеціальний плагін для збірки та публікації Docker-образів
+    image: plugins/docker
+    settings:
+      # Вказуємо назву репозиторію в Docker Hub
+      repo: kad0602/go-gin-api
+      # Безпечне отримання логіну та паролю з секретів Drone CI
+      username:
+        from_secret: docker_username
+      password:
+        from_secret: docker_password
+      # Вказуємо теги: latest та унікальний SHA коміту
+      tags:
+        - latest
+        - ${DRONE_COMMIT_SHA:0:7}
+    # Цей етап виконається ТІЛЬКИ при мержі/пуші в гілку main
+    when:
+      branch:
+        - main
+      event:
+        - push
+
+# Тригери для всього пайплайну (запускати при комітах або Pull Requests)
+trigger:
+  event:
+    - push
+    - pull_request
